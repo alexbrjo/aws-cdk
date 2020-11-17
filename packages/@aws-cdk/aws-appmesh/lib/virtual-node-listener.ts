@@ -1,7 +1,9 @@
+import { CfnCertificate } from '@aws-cdk/aws-acmpca';
 import * as cdk from '@aws-cdk/core';
 import { CfnVirtualNode } from './appmesh.generated';
 import { validateHealthChecks } from './private/utils';
 import { HealthCheck, Protocol } from './shared-interfaces';
+import { AcmTlsCertificate, TlsCertificate, TlsMode } from './tls-certificate';
 
 /**
  * Properties for a VirtualNode listener
@@ -30,6 +32,30 @@ interface VirtualNodeListenerCommonOptions {
    * @default - no healthcheck
    */
   readonly healthCheck?: HealthCheck;
+
+
+  /**
+   * The TLS configuration for the listener
+   *
+   * @default - no tls
+   */
+  readonly tls?: IListenerTlsConfig;
+}
+
+/**
+ * Represents Listener TLS configuration.
+ */
+export interface IListenerTlsConfig {
+
+  /**
+   * The TLS mode.
+   */
+  readonly mode: TlsMode;
+
+  /**
+   * Represents the listener certificate
+   */
+  certificate: TlsCertificate | CfnCertificate;
 }
 
 /**
@@ -126,28 +152,28 @@ export abstract class VirtualNodeListener {
    * Returns an HTTP Listener for a VirtualNode
    */
   public static http(props: HttpVirtualNodeListenerOptions = {}): VirtualNodeListener {
-    return new VirtualNodeListenerImpl(Protocol.HTTP, props.healthCheck, props.timeout, props.port);
+    return new VirtualNodeListenerImpl(Protocol.HTTP, props.healthCheck, props.timeout, props.port, props.tls);
   }
 
   /**
    * Returns an HTTP2 Listener for a VirtualNode
    */
   public static http2(props: HttpVirtualNodeListenerOptions = {}): VirtualNodeListener {
-    return new VirtualNodeListenerImpl(Protocol.HTTP2, props.healthCheck, props.timeout, props.port);
+    return new VirtualNodeListenerImpl(Protocol.HTTP2, props.healthCheck, props.timeout, props.port, props.tls);
   }
 
   /**
    * Returns an GRPC Listener for a VirtualNode
    */
   public static grpc(props: GrpcVirtualNodeListenerOptions = {}): VirtualNodeListener {
-    return new VirtualNodeListenerImpl(Protocol.GRPC, props.healthCheck, props.timeout, props.port);
+    return new VirtualNodeListenerImpl(Protocol.GRPC, props.healthCheck, props.timeout, props.port, props.tls);
   }
 
   /**
    * Returns an TCP Listener for a VirtualNode
    */
   public static tcp(props: TcpVirtualNodeListenerOptions = {}): VirtualNodeListener {
-    return new VirtualNodeListenerImpl(Protocol.TCP, props.healthCheck, props.timeout, props.port);
+    return new VirtualNodeListenerImpl(Protocol.TCP, props.healthCheck, props.timeout, props.port, props.tls);
   }
 
   /**
@@ -161,7 +187,8 @@ class VirtualNodeListenerImpl extends VirtualNodeListener {
   constructor(private readonly protocol: Protocol,
     private readonly healthCheck: HealthCheck | undefined,
     private readonly timeout: HttpTimeout | undefined,
-    private readonly port: number = 8080) { super(); }
+    private readonly port: number = 8080,
+    private tls: IListenerTlsConfig | undefined) { super(); }
 
   public bind(_scope: cdk.Construct): VirtualNodeListenerConfig {
     return {
@@ -172,6 +199,7 @@ class VirtualNodeListenerImpl extends VirtualNodeListener {
         },
         healthCheck: this.healthCheck ? this.renderHealthCheck(this.healthCheck) : undefined,
         timeout: this.timeout ? this.renderTimeout(this.timeout) : undefined,
+        tls: this.tls ? this.renderTls(this.tls) : undefined,
       },
     };
   }
@@ -216,4 +244,23 @@ class VirtualNodeListenerImpl extends VirtualNodeListener {
       },
     });
   }
+
+  private renderTls(tls: IListenerTlsConfig): CfnVirtualNode.ListenerTlsProperty {
+
+    if (this.isAcmCertificate(tls.certificate)) {
+      tls.certificate = new AcmTlsCertificate({
+        acmCertificate: tls.certificate.attrArn,
+      });
+    }
+
+    return {
+      certificate: tls.certificate.bind(),
+      mode: tls.mode,
+    };
+  }
+
+  private isAcmCertificate(cert: TlsCertificate | CfnCertificate): cert is CfnCertificate {
+    return (cert as CfnCertificate).attrArn !== undefined;
+  }
+
 }

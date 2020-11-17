@@ -1,7 +1,10 @@
+import { CfnCertificate } from '@aws-cdk/aws-acmpca';
 import * as cdk from '@aws-cdk/core';
 import { CfnVirtualGateway } from './appmesh.generated';
 import { validateHealthChecks } from './private/utils';
 import { HealthCheck, Protocol } from './shared-interfaces';
+import { AcmTlsCertificate, TlsCertificate } from './tls-certificate';
+import { IListenerTlsConfig } from './virtual-node-listener';
 
 /**
  * Represents the properties needed to define HTTP Listeners for a VirtualGateway
@@ -20,6 +23,13 @@ export interface HttpGatewayListenerProps {
    * @default - no healthcheck
    */
   readonly healthCheck?: HealthCheck;
+
+  /**
+   * The TLS configuration for the listener
+   *
+   * @default - none
+   */
+  readonly tls?: IListenerTlsConfig;
 }
 
 /**
@@ -39,6 +49,13 @@ export interface GrpcGatewayListenerProps {
    * @default - no healthcheck
    */
   readonly healthCheck?: HealthCheck;
+
+  /**
+   * The TLS configuration for the listener
+   *
+   * @default - none
+   */
+  readonly tls?: IListenerTlsConfig;
 }
 
 /**
@@ -92,6 +109,11 @@ export abstract class VirtualGatewayListener {
   protected abstract healthCheck?: HealthCheck;
 
   /**
+   * Configuration of TLS for the listener.
+   */
+  protected abstract tls?: IListenerTlsConfig;
+
+  /**
    * Called when the GatewayListener type is initialized. Can be used to enforce
    * mutual exclusivity
    */
@@ -122,6 +144,24 @@ export abstract class VirtualGatewayListener {
 
     return healthCheck;
   }
+
+  protected renderTls(tls: IListenerTlsConfig): CfnVirtualGateway.VirtualGatewayListenerTlsProperty {
+
+    if (this.isAcmCertificate(tls.certificate)) {
+      tls.certificate = new AcmTlsCertificate({
+        acmCertificate: tls.certificate.attrArn,
+      });
+    }
+
+    return {
+      certificate: tls.certificate.bind(),
+      mode: tls.mode,
+    };
+  }
+
+  private isAcmCertificate(cert: TlsCertificate | CfnCertificate): cert is CfnCertificate {
+    return (cert as CfnCertificate).attrArn !== undefined;
+  }
 }
 
 /**
@@ -147,10 +187,16 @@ class HttpGatewayListener extends VirtualGatewayListener {
    */
   protected protocol: Protocol = Protocol.HTTP;
 
+  /**
+   * Configuration of TLS for the listener.
+   */
+  readonly tls?: IListenerTlsConfig;
+
   constructor(props: HttpGatewayListenerProps = {}) {
     super();
     this.port = props.port ? props.port : 8080;
     this.healthCheck = props.healthCheck;
+    this.tls = props.tls;
   }
 
   /**
@@ -165,6 +211,7 @@ class HttpGatewayListener extends VirtualGatewayListener {
           protocol: this.protocol,
         },
         healthCheck: this.healthCheck ? this.renderHealthCheck(this.healthCheck): undefined,
+        tls: this.tls ? this.renderTls(this.tls): undefined,
       },
     };
   }
@@ -203,10 +250,16 @@ class GrpcGatewayListener extends VirtualGatewayListener {
    */
   protected protocol: Protocol = Protocol.GRPC;
 
+  /**
+   * Configuration of TLS for the listener.
+   */
+  readonly tls?: IListenerTlsConfig;
+
   constructor(props: HttpGatewayListenerProps = {}) {
     super();
     this.port = props.port ? props.port : 8080;
     this.healthCheck = props.healthCheck;
+    this.tls = props.tls;
   }
 
   /**
@@ -221,6 +274,7 @@ class GrpcGatewayListener extends VirtualGatewayListener {
           protocol: Protocol.GRPC,
         },
         healthCheck: this.healthCheck? this.renderHealthCheck(this.healthCheck): undefined,
+        tls: this.tls ? this.renderTls(this.tls): undefined,
       },
     };
   }

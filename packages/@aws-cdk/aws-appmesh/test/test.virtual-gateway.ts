@@ -1,8 +1,10 @@
 import { expect, haveResourceLike } from '@aws-cdk/assert';
+import { CfnCertificate, CfnCertificateAuthority } from '@aws-cdk/aws-acmpca';
 import * as cdk from '@aws-cdk/core';
 import { Test } from 'nodeunit';
 
 import * as appmesh from '../lib';
+import { FileTlsCertificate, TlsMode } from '../lib/tls-certificate';
 
 export = {
   'When creating a VirtualGateway': {
@@ -151,6 +153,174 @@ export = {
         },
         VirtualGatewayName: 'test-gateway',
       }));
+      test.done();
+    },
+    'with an http listener with a TLS certificate from ACM'(test: Test) {
+      // GIVEN
+      const stack = new cdk.Stack();
+
+      // WHEN
+      const mesh = new appmesh.Mesh(stack, 'mesh', {
+        meshName: 'test-mesh',
+      });
+
+      const ca = new CfnCertificateAuthority(stack, 'CA', {
+        keyAlgorithm: 'RSA_2048',
+        signingAlgorithm: 'SHA256WITHRSA',
+        subject: {
+          country: 'US',
+          state: 'Washington',
+          locality: 'Seattle',
+          organization: 'App Mesh',
+          organizationalUnit: 'cdk test',
+        },
+        type: 'ROOT',
+      });
+
+      const cert = new CfnCertificate(stack, 'cert', {
+        certificateAuthorityArn: ca.attrArn,
+        certificateSigningRequest: ca.attrCertificateSigningRequest,
+        signingAlgorithm: 'SHA256WITHRSA',
+        validity: {
+          value: 365,
+          type: 'DAYS',
+        },
+      });
+
+      new appmesh.VirtualGateway(stack, 'testGateway', {
+        virtualGatewayName: 'test-gateway',
+        mesh: mesh,
+        listeners: [appmesh.VirtualGatewayListener.httpGatewayListener({
+          port: 8080,
+          tls: {
+            mode: TlsMode.STRICT,
+            certificate: cert,
+          },
+        })],
+      });
+
+      // THEN
+      expect(stack).to(haveResourceLike('AWS::AppMesh::VirtualGateway', {
+        Spec: {
+          Listeners: [
+            {
+              PortMapping: {
+                Port: 8080,
+                Protocol: appmesh.Protocol.HTTP,
+              },
+              TLS: {
+                Mode: 'STRICT',
+                Certificate: {
+                  ACM: {
+                    CertificateArn: {
+                      'Fn::GetAtt': ['cert', 'Arn'],
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      }));
+
+      test.done();
+    },
+    'with an grpc listener with a TLS certificate from file'(test: Test) {
+      // GIVEN
+      const stack = new cdk.Stack();
+
+      // WHEN
+      const mesh = new appmesh.Mesh(stack, 'mesh', {
+        meshName: 'test-mesh',
+      });
+
+      new appmesh.VirtualGateway(stack, 'testGateway', {
+        virtualGatewayName: 'test-gateway',
+        mesh: mesh,
+        listeners: [appmesh.VirtualGatewayListener.grpcGatewayListener({
+          port: 8080,
+          tls: {
+            mode: TlsMode.STRICT,
+            certificate: new FileTlsCertificate({
+              certificateChain: 'path/to/certChain',
+              privateKey: 'path/to/privateKey',
+            }),
+          },
+        })],
+      });
+
+      // THEN
+      expect(stack).to(haveResourceLike('AWS::AppMesh::VirtualGateway', {
+        Spec: {
+          Listeners: [
+            {
+              PortMapping: {
+                Port: 8080,
+                Protocol: appmesh.Protocol.GRPC,
+              },
+              TLS: {
+                Mode: 'STRICT',
+                Certificate: {
+                  File: {
+                    CertificateChain: 'path/to/certChain',
+                    PrivateKey: 'path/to/privateKey',
+                  },
+                },
+              },
+            },
+          ],
+        },
+      }));
+
+      test.done();
+    },
+    'with an grpc listener with the TLS mode permissive'(test: Test) {
+      // GIVEN
+      const stack = new cdk.Stack();
+
+      // WHEN
+      const mesh = new appmesh.Mesh(stack, 'mesh', {
+        meshName: 'test-mesh',
+      });
+
+      new appmesh.VirtualGateway(stack, 'testGateway', {
+        virtualGatewayName: 'test-gateway',
+        mesh: mesh,
+        listeners: [appmesh.VirtualGatewayListener.grpcGatewayListener({
+          port: 8080,
+          tls: {
+            mode: TlsMode.PERMISSIVE,
+            certificate: new FileTlsCertificate({
+              certificateChain: 'path/to/certChain',
+              privateKey: 'path/to/privateKey',
+            }),
+          },
+        })],
+      });
+
+      // THEN
+      expect(stack).to(haveResourceLike('AWS::AppMesh::VirtualGateway', {
+        Spec: {
+          Listeners: [
+            {
+              PortMapping: {
+                Port: 8080,
+                Protocol: appmesh.Protocol.GRPC,
+              },
+              TLS: {
+                Mode: 'PERMISSIVE',
+                Certificate: {
+                  File: {
+                    CertificateChain: 'path/to/certChain',
+                    PrivateKey: 'path/to/privateKey',
+                  },
+                },
+              },
+            },
+          ],
+        },
+      }));
+
       test.done();
     },
   },

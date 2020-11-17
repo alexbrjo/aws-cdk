@@ -1,3 +1,4 @@
+import { CfnCertificate, CfnCertificateAuthority } from '@aws-cdk/aws-acmpca';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as cloudmap from '@aws-cdk/aws-servicediscovery';
 import * as cdk from '@aws-cdk/core';
@@ -15,6 +16,39 @@ const vpc = new ec2.Vpc(stack, 'vpc', {
 const namespace = new cloudmap.PrivateDnsNamespace(stack, 'test-namespace', {
   vpc,
   name: 'domain.local',
+});
+
+const ca = new CfnCertificateAuthority(stack, 'CA', {
+  keyAlgorithm: 'RSA_2048',
+  signingAlgorithm: 'SHA256WITHRSA',
+  subject: {
+    country: 'US',
+    state: 'Washington',
+    locality: 'Seattle',
+    organization: 'App Mesh',
+    organizationalUnit: 'cdk test',
+  },
+  type: 'ROOT',
+});
+
+const vn_cert = new CfnCertificate(stack, 'vn_cert', {
+  certificateAuthorityArn: ca.attrArn,
+  certificateSigningRequest: ca.attrCertificateSigningRequest,
+  signingAlgorithm: 'SHA256WITHRSA',
+  validity: {
+    value: 365,
+    type: 'DAYS',
+  },
+});
+
+const vg_cert = new CfnCertificate(stack, 'vg_cert', {
+  certificateAuthorityArn: ca.attrArn,
+  certificateSigningRequest: ca.attrCertificateSigningRequest,
+  signingAlgorithm: 'SHA256WITHRSA',
+  validity: {
+    value: 365,
+    type: 'DAYS',
+  },
 });
 
 const mesh = new appmesh.Mesh(stack, 'mesh');
@@ -35,6 +69,10 @@ const node = mesh.addVirtualNode('node', {
     healthCheck: {
       healthyThreshold: 3,
       path: '/check-path',
+    },
+    tls: {
+      mode: appmesh.TlsMode.STRICT,
+      certificate: vn_cert,
     },
   })],
   backends: [
@@ -125,6 +163,10 @@ new appmesh.VirtualGateway(stack, 'gateway2', {
     port: 443,
     healthCheck: {
       interval: cdk.Duration.seconds(10),
+    },
+    tls: {
+      mode: appmesh.TlsMode.STRICT,
+      certificate: vg_cert,
     },
   })],
 });

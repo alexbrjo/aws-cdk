@@ -1,5 +1,64 @@
 {
   "Resources": {
+    "CA": {
+      "Type": "AWS::ACMPCA::CertificateAuthority",
+      "Properties": {
+        "KeyAlgorithm": "RSA_2048",
+        "SigningAlgorithm": "SHA256WITHRSA",
+        "Subject": {
+          "Country": "US",
+          "State": "Washington",
+          "Locality": "Seattle",
+          "Organization": "App Mesh",
+          "OrganizationalUnit": "cdk test"
+        },
+        "Type": "ROOT"
+      }
+    },
+    "vgcert": {
+      "Type": "AWS::ACMPCA::Certificate",
+      "Properties": {
+        "CertificateAuthorityArn": {
+          "Fn::GetAtt": [
+            "CA",
+            "Arn"
+          ]
+        },
+        "CertificateSigningRequest": {
+          "Fn::GetAtt": [
+            "CA",
+            "CertificateSigningRequest"
+          ]
+        },
+        "SigningAlgorithm": "SHA256WITHRSA",
+        "Validity": {
+          "Value": 365,
+          "Type": "DAYS"
+        }
+      }
+    },
+    "vncert": {
+      "Type": "AWS::ACMPCA::Certificate",
+      "Properties": {
+        "CertificateAuthorityArn": {
+          "Fn::GetAtt": [
+            "CA",
+            "Arn"
+          ]
+        },
+        "CertificateSigningRequest": {
+          "Fn::GetAtt": [
+            "CA",
+            "CertificateSigningRequest"
+          ]
+        },
+        "SigningAlgorithm": "SHA256WITHRSA",
+        "Validity": {
+          "Value": 365,
+          "Type": "DAYS"
+        }
+      }
+    },
     "vpcA2121C38": {
       "Type": "AWS::EC2::VPC",
       "Properties": {
@@ -669,6 +728,19 @@
               "PortMapping": {
                 "Port": 8080,
                 "Protocol": "http"
+              },
+              "TLS": {
+                "Certificate": {
+                  "ACM": {
+                    "CertificateArn": {
+                      "Fn::GetAtt": [
+                        "vncert",
+                        "Arn"
+                      ]
+                    }
+                  }
+                },
+                "Mode": "STRICT"
               }
             }
           ],
@@ -967,6 +1039,19 @@
               "PortMapping": {
                 "Port": 443,
                 "Protocol": "http"
+              },
+              "TLS": {
+                "Certificate": {
+                  "ACM": {
+                    "CertificateArn": {
+                      "Fn::GetAtt": [
+                        "vgcert",
+                        "Arn"
+                      ]
+                    }
+                  }
+                },
+                "Mode": "STRICT"
               }
             }
           ]

@@ -1,4 +1,4 @@
-import { CfnCertificate, CfnCertificateAuthority } from '@aws-cdk/aws-acmpca';
+import { Certificate } from '@aws-cdk/aws-certificatemanager';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as cloudmap from '@aws-cdk/aws-servicediscovery';
 import * as cdk from '@aws-cdk/core';
@@ -18,37 +18,12 @@ const namespace = new cloudmap.PrivateDnsNamespace(stack, 'test-namespace', {
   name: 'domain.local',
 });
 
-const ca = new CfnCertificateAuthority(stack, 'CA', {
-  keyAlgorithm: 'RSA_2048',
-  signingAlgorithm: 'SHA256WITHRSA',
-  subject: {
-    country: 'US',
-    state: 'Washington',
-    locality: 'Seattle',
-    organization: 'App Mesh',
-    organizationalUnit: 'cdk test',
-  },
-  type: 'ROOT',
+const vg_cert = new Certificate(stack, 'vg-cert', {
+  domainName: 'gateway.cluster.local',
 });
 
-const vn_cert = new CfnCertificate(stack, 'vn_cert', {
-  certificateAuthorityArn: ca.attrArn,
-  certificateSigningRequest: ca.attrCertificateSigningRequest,
-  signingAlgorithm: 'SHA256WITHRSA',
-  validity: {
-    value: 365,
-    type: 'DAYS',
-  },
-});
-
-const vg_cert = new CfnCertificate(stack, 'vg_cert', {
-  certificateAuthorityArn: ca.attrArn,
-  certificateSigningRequest: ca.attrCertificateSigningRequest,
-  signingAlgorithm: 'SHA256WITHRSA',
-  validity: {
-    value: 365,
-    type: 'DAYS',
-  },
+const vn_cert = new Certificate(stack, 'vn-cert', {
+  domainName: 'node.cluster.local',
 });
 
 const mesh = new appmesh.Mesh(stack, 'mesh');
@@ -70,10 +45,10 @@ const node = mesh.addVirtualNode('node', {
       healthyThreshold: 3,
       path: '/check-path',
     },
-    tls: {
-      mode: appmesh.TlsMode.STRICT,
-      certificate: vn_cert,
-    },
+    tlsMode: appmesh.TlsMode.STRICT,
+    tlsCertificate: appmesh.TlsCertificate.acm({
+      acmCertificate: vn_cert,
+    }),
   })],
   backends: [
     virtualService,
@@ -164,10 +139,10 @@ new appmesh.VirtualGateway(stack, 'gateway2', {
     healthCheck: {
       interval: cdk.Duration.seconds(10),
     },
-    tls: {
-      mode: appmesh.TlsMode.STRICT,
-      certificate: vg_cert,
-    },
+    tlsMode: appmesh.TlsMode.STRICT,
+    tlsCertificate: appmesh.TlsCertificate.acm({
+      acmCertificate: vg_cert,
+    }),
   })],
 });
 

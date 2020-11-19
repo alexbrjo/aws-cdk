@@ -1,10 +1,10 @@
 import { expect, haveResourceLike } from '@aws-cdk/assert';
-import { CfnCertificate, CfnCertificateAuthority } from '@aws-cdk/aws-acmpca';
+import { Certificate } from '@aws-cdk/aws-certificatemanager';
 import * as cdk from '@aws-cdk/core';
 import { Test } from 'nodeunit';
 
 import * as appmesh from '../lib';
-import { FileTlsCertificate, TlsMode } from '../lib/tls-certificate';
+import { TlsMode } from '../lib/tls-certificate';
 
 export = {
   'When creating a VirtualGateway': {
@@ -164,27 +164,8 @@ export = {
         meshName: 'test-mesh',
       });
 
-      const ca = new CfnCertificateAuthority(stack, 'CA', {
-        keyAlgorithm: 'RSA_2048',
-        signingAlgorithm: 'SHA256WITHRSA',
-        subject: {
-          country: 'US',
-          state: 'Washington',
-          locality: 'Seattle',
-          organization: 'App Mesh',
-          organizationalUnit: 'cdk test',
-        },
-        type: 'ROOT',
-      });
-
-      const cert = new CfnCertificate(stack, 'cert', {
-        certificateAuthorityArn: ca.attrArn,
-        certificateSigningRequest: ca.attrCertificateSigningRequest,
-        signingAlgorithm: 'SHA256WITHRSA',
-        validity: {
-          value: 365,
-          type: 'DAYS',
-        },
+      const cert = new Certificate(stack, 'cert', {
+        domainName: '',
       });
 
       new appmesh.VirtualGateway(stack, 'testGateway', {
@@ -192,10 +173,10 @@ export = {
         mesh: mesh,
         listeners: [appmesh.VirtualGatewayListener.httpGatewayListener({
           port: 8080,
-          tls: {
-            mode: TlsMode.STRICT,
-            certificate: cert,
-          },
+          tlsMode: TlsMode.STRICT,
+          tlsCertificate: appmesh.TlsCertificate.acm({
+            acmCertificate: cert,
+          }),
         })],
       });
 
@@ -239,13 +220,11 @@ export = {
         mesh: mesh,
         listeners: [appmesh.VirtualGatewayListener.grpcGatewayListener({
           port: 8080,
-          tls: {
-            mode: TlsMode.STRICT,
-            certificate: new FileTlsCertificate({
-              certificateChain: 'path/to/certChain',
-              privateKey: 'path/to/privateKey',
-            }),
-          },
+          tlsMode: TlsMode.STRICT,
+          tlsCertificate: appmesh.TlsCertificate.file({
+            certificateChain: 'path/to/certChain',
+            privateKey: 'path/to/privateKey',
+          }),
         })],
       });
 
@@ -288,13 +267,11 @@ export = {
         mesh: mesh,
         listeners: [appmesh.VirtualGatewayListener.grpcGatewayListener({
           port: 8080,
-          tls: {
-            mode: TlsMode.PERMISSIVE,
-            certificate: new FileTlsCertificate({
-              certificateChain: 'path/to/certChain',
-              privateKey: 'path/to/privateKey',
-            }),
-          },
+          tlsMode: TlsMode.PERMISSIVE,
+          tlsCertificate: appmesh.TlsCertificate.file({
+            certificateChain: 'path/to/certChain',
+            privateKey: 'path/to/privateKey',
+          }),
         })],
       });
 

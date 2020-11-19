@@ -1,21 +1,41 @@
-import { CfnVirtualNode, CfnVirtualGateway } from './appmesh.generated';
+import { ICertificate } from '@aws-cdk/aws-certificatemanager';
+import { CfnVirtualGateway, CfnVirtualNode } from './appmesh.generated';
 
 /**
  * Enum of supported TLS modes
  */
 export enum TlsMode {
+
   /**
    * Only accept encrypted traffic
    */
   STRICT = 'STRICT',
+
   /**
    * Accept encrypted and plaintext traffic.
    */
   PERMISSIVE = 'PERMISSIVE',
+
   /**
    * TLS is disabled, only accept plaintext traffic.
    */
   DISABLED = 'DISABLED',
+}
+
+/**
+ * Redundant API shapes are represented here.
+ */
+export interface TlsCertificateConfig {
+
+  /**
+   * The CFN shape for a virtual gateway listener TLS certificate
+   */
+  readonly virtualGatewayListenerTlsCertificate: CfnVirtualGateway.VirtualGatewayListenerTlsCertificateProperty,
+
+  /**
+   * The CFN shape for a virtual node listener TLS certificate
+   */
+  readonly virtualNodeListenerTlsCertificate: CfnVirtualNode.ListenerTlsCertificateProperty,
 }
 
 /**
@@ -24,32 +44,52 @@ export enum TlsMode {
 export abstract class TlsCertificate {
 
   /**
+   * Returns an File TLS Certificate
+   */
+  public static file(props: FileCertificateOptions): TlsCertificate {
+    return new FileTlsCertificate(props);
+  }
+
+  /**
+   * Returns an ACM TLS Certificate
+   */
+  public static acm(props: ACMCertificateOptions): TlsCertificate {
+    return new ACMTlsCertificate(props);
+  }
+
+  /**
    * Returns TLS certificate based provider.
    */
-  public abstract bind(): CfnVirtualNode.ListenerTlsCertificateProperty
-  | CfnVirtualGateway.VirtualGatewayListenerTlsCertificateProperty;
+  public abstract bind(): TlsCertificateConfig;
 
 }
 
 /**
  * Represents a ACM provided TLS certificate
  */
-export class AcmTlsCertificate extends TlsCertificate {
+export class ACMTlsCertificate extends TlsCertificate {
 
   /**
    * The ARN of the ACM certificate
    */
-  readonly certificateArn: string;
+  readonly acmCertificate: ICertificate;
 
   constructor(props: ACMCertificateOptions) {
     super();
-    this.certificateArn = props.acmCertificate;
+    this.acmCertificate = props.acmCertificate;
   }
 
-  bind(): CfnVirtualNode.ListenerTlsCertificateProperty | CfnVirtualGateway.VirtualGatewayListenerTlsCertificateProperty {
+  bind(): TlsCertificateConfig {
     return {
-      acm: {
-        certificateArn: this.certificateArn,
+      virtualGatewayListenerTlsCertificate: {
+        acm: {
+          certificateArn: this.acmCertificate.certificateArn,
+        },
+      },
+      virtualNodeListenerTlsCertificate: {
+        acm: {
+          certificateArn: this.acmCertificate.certificateArn,
+        },
       },
     };
   }
@@ -74,11 +114,19 @@ export class FileTlsCertificate extends TlsCertificate {
     this.privateKey = props.privateKey;
   }
 
-  bind(): CfnVirtualNode.ListenerTlsCertificateProperty | CfnVirtualGateway.VirtualGatewayListenerTlsCertificateProperty {
+  bind(): TlsCertificateConfig {
     return {
-      file: {
-        certificateChain: this.certificateChain,
-        privateKey: this.privateKey,
+      virtualGatewayListenerTlsCertificate: {
+        file: {
+          certificateChain: this.certificateChain,
+          privateKey: this.privateKey,
+        },
+      },
+      virtualNodeListenerTlsCertificate: {
+        file: {
+          certificateChain: this.certificateChain,
+          privateKey: this.privateKey,
+        },
       },
     };
   }
@@ -91,7 +139,7 @@ export interface ACMCertificateOptions {
   /**
    * The ACM certificate
    */
-  readonly acmCertificate: string;
+  readonly acmCertificate: ICertificate;
 }
 
 /**

@@ -58,6 +58,13 @@ export abstract class TlsCertificate {
   }
 
   /**
+   * The TLS mode.
+   *
+   * @default - none
+   */
+  readonly abstract tlsMode: TlsMode;
+
+  /**
    * Returns TLS certificate based provider.
    */
   public abstract bind(): TlsCertificateConfig;
@@ -70,12 +77,20 @@ export abstract class TlsCertificate {
 export class ACMTlsCertificate extends TlsCertificate {
 
   /**
+   * The TLS mode.
+   *
+   * @default - none
+   */
+  readonly tlsMode: TlsMode;
+
+  /**
    * The ARN of the ACM certificate
    */
   readonly acmCertificate: ICertificate;
 
   constructor(props: ACMCertificateOptions) {
     super();
+    this.tlsMode = props.tlsMode;
     this.acmCertificate = props.acmCertificate;
   }
 
@@ -99,10 +114,19 @@ export class ACMTlsCertificate extends TlsCertificate {
  * Represents a file provided TLS certificate
  */
 export class FileTlsCertificate extends TlsCertificate {
+
+  /**
+   * The TLS mode.
+   *
+   * @default - none
+   */
+  readonly tlsMode: TlsMode;
+
   /**
    * The file path of the certificate chain file.
    */
   readonly certificateChain: string;
+
   /**
    * The file path of the private key file.
    */
@@ -110,6 +134,7 @@ export class FileTlsCertificate extends TlsCertificate {
 
   constructor(props: FileCertificateOptions) {
     super();
+    this.tlsMode = props.tlsMode;
     this.certificateChain = props.certificateChain;
     this.privateKey = props.privateKey;
   }
@@ -136,6 +161,14 @@ export class FileTlsCertificate extends TlsCertificate {
  * ACM Certificate Properties
  */
 export interface ACMCertificateOptions {
+
+  /**
+   * The TLS mode.
+   *
+   * @default - none
+   */
+  readonly tlsMode: TlsMode;
+
   /**
    * The ACM certificate
    */
@@ -146,10 +179,19 @@ export interface ACMCertificateOptions {
  * File Certificate Properties
  */
 export interface FileCertificateOptions {
+
+  /**
+   * The TLS mode.
+   *
+   * @default - none
+   */
+  readonly tlsMode: TlsMode;
+
   /**
    * The file path of the certificate chain file.
    */
   readonly certificateChain: string;
+
   /**
    * The file path of the private key file.
    */

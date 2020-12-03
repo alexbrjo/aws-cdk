@@ -166,10 +166,10 @@ export abstract class VirtualGatewayListener {
     return healthCheck;
   }
 
-  protected renderTls(tlsCertificate: TlsCertificate, tlsMode: TlsMode): CfnVirtualGateway.VirtualGatewayListenerTlsProperty {
+  protected renderTls(tlsCertificate: TlsCertificate): CfnVirtualGateway.VirtualGatewayListenerTlsProperty {
     return {
       certificate: tlsCertificate.bind().virtualGatewayListenerTlsCertificate,
-      mode: tlsMode.toString(),
+      mode: tlsCertificate.tlsMode.toString(),
     };
   }
 }
@@ -231,7 +231,7 @@ class HttpGatewayListener extends VirtualGatewayListener {
           protocol: this.protocol,
         },
         healthCheck: this.healthCheck ? this.renderHealthCheck(this.healthCheck): undefined,
-        tls: this.tlsCertificate && this.tlsMode ? this.renderTls(this.tlsCertificate, this.tlsMode) : undefined,
+        tls: this.tlsCertificate ? this.renderTls(this.tlsCertificate) : undefined,
       },
     };
   }
@@ -304,7 +304,7 @@ class GrpcGatewayListener extends VirtualGatewayListener {
           protocol: Protocol.GRPC,
         },
         healthCheck: this.healthCheck? this.renderHealthCheck(this.healthCheck): undefined,
-        tls: this.tlsCertificate && this.tlsMode ? this.renderTls(this.tlsCertificate, this.tlsMode) : undefined,
+        tls: this.tlsCertificate ? this.renderTls(this.tlsCertificate) : undefined,
       },
     };
   }

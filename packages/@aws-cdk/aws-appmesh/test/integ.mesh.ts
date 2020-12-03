@@ -1,4 +1,3 @@
-import { Certificate } from '@aws-cdk/aws-certificatemanager';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as cloudmap from '@aws-cdk/aws-servicediscovery';
 import * as cdk from '@aws-cdk/core';
@@ -16,14 +15,6 @@ const vpc = new ec2.Vpc(stack, 'vpc', {
 const namespace = new cloudmap.PrivateDnsNamespace(stack, 'test-namespace', {
   vpc,
   name: 'domain.local',
-});
-
-const vg_cert = new Certificate(stack, 'vg-cert', {
-  domainName: 'gateway.cluster.local',
-});
-
-const vn_cert = new Certificate(stack, 'vn-cert', {
-  domainName: 'node.cluster.local',
 });
 
 const mesh = new appmesh.Mesh(stack, 'mesh');
@@ -45,9 +36,10 @@ const node = mesh.addVirtualNode('node', {
       healthyThreshold: 3,
       path: '/check-path',
     },
-    tlsMode: appmesh.TlsMode.STRICT,
-    tlsCertificate: appmesh.TlsCertificate.acm({
-      acmCertificate: vn_cert,
+    tlsCertificate: appmesh.TlsCertificate.file({
+      certificateChain: 'path/to/certChain',
+      privateKey: 'path/to/privateKey',
+      tlsMode: appmesh.TlsMode.STRICT,
     }),
   })],
   backends: [
@@ -139,9 +131,10 @@ new appmesh.VirtualGateway(stack, 'gateway2', {
     healthCheck: {
       interval: cdk.Duration.seconds(10),
     },
-    tlsMode: appmesh.TlsMode.STRICT,
-    tlsCertificate: appmesh.TlsCertificate.acm({
-      acmCertificate: vg_cert,
+    tlsCertificate: appmesh.TlsCertificate.file({
+      certificateChain: 'path/to/certChain',
+      privateKey: 'path/to/privateKey',
+      tlsMode: appmesh.TlsMode.STRICT,
     }),
   })],
 });

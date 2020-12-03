@@ -276,9 +276,9 @@ export = {
           dnsHostName: 'test',
           listeners: [appmesh.VirtualNodeListener.grpc({
             port: 80,
-            tlsMode: TlsMode.STRICT,
             tlsCertificate: appmesh.TlsCertificate.acm({
               acmCertificate: cert,
+              tlsMode: TlsMode.STRICT,
             }),
           },
           )],
@@ -298,7 +298,7 @@ export = {
                   Certificate: {
                     ACM: {
                       CertificateArn: {
-                        'Fn::GetAtt': ['cert', 'Arn'],
+                        Ref: 'cert56CA94EB',
                       },
                     },
                   },
@@ -326,10 +326,10 @@ export = {
           dnsHostName: 'test',
           listeners: [appmesh.VirtualNodeListener.http({
             port: 80,
-            tlsMode: TlsMode.STRICT,
             tlsCertificate: appmesh.TlsCertificate.file({
               certificateChain: 'path/to/certChain',
               privateKey: 'path/to/privateKey',
+              tlsMode: TlsMode.STRICT,
             }),
           })],
         });
@@ -374,10 +374,10 @@ export = {
             dnsHostName: 'test',
             listeners: [appmesh.VirtualNodeListener.http({
               port: 80,
-              tlsMode: TlsMode.PERMISSIVE,
               tlsCertificate: appmesh.TlsCertificate.file({
                 certificateChain: 'path/to/certChain',
                 privateKey: 'path/to/privateKey',
+                tlsMode: TlsMode.PERMISSIVE,
               }),
             })],
           });

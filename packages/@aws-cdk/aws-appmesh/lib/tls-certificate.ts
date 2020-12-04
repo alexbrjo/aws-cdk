@@ -50,8 +50,8 @@ export abstract class TlsCertificate {
   /**
    * Returns an ACM TLS Certificate
    */
-  public static acm(props: ACMCertificateOptions): TlsCertificate {
-    return new ACMTlsCertificate(props);
+  public static acm(props: AcmCertificateOptions): TlsCertificate {
+    return new AcmTlsCertificate(props);
   }
 
   /**
@@ -71,7 +71,7 @@ export abstract class TlsCertificate {
 /**
  * Represents a ACM provided TLS certificate
  */
-export class ACMTlsCertificate extends TlsCertificate {
+export class AcmTlsCertificate extends TlsCertificate {
   /**
    * The TLS mode.
    *
@@ -84,7 +84,7 @@ export class ACMTlsCertificate extends TlsCertificate {
    */
   readonly acmCertificate: acm.ICertificate;
 
-  constructor(props: ACMCertificateOptions) {
+  constructor(props: AcmCertificateOptions) {
     super();
     this.tlsMode = props.tlsMode;
     this.acmCertificate = props.acmCertificate;
@@ -155,7 +155,7 @@ export class FileTlsCertificate extends TlsCertificate {
 /**
  * ACM Certificate Properties
  */
-export interface ACMCertificateOptions {
+export interface AcmCertificateOptions {
   /**
    * The TLS mode.
    *

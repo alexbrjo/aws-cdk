@@ -3,6 +3,7 @@ export * from './appmesh.generated';
 export * from './mesh';
 export * from './route';
 export * from './shared-interfaces';
+export * from './tls-certificate';
 export * from './virtual-node';
 export * from './virtual-router';
 export * from './virtual-router-listener';

@@ -294,7 +294,7 @@ export = {
                   Protocol: 'grpc',
                 },
                 TLS: {
-                  Mode: 'STRICT',
+                  Mode: TlsMode.STRICT,
                   Certificate: {
                     ACM: {
                       CertificateArn: {
@@ -344,7 +344,7 @@ export = {
                   Protocol: 'http',
                 },
                 TLS: {
-                  Mode: 'STRICT',
+                  Mode: TlsMode.STRICT,
                   Certificate: {
                     File: {
                       CertificateChain: 'path/to/certChain',
@@ -392,7 +392,7 @@ export = {
                     Protocol: 'http',
                   },
                   TLS: {
-                    Mode: 'PERMISSIVE',
+                    Mode: TlsMode.PERMISSIVE,
                     Certificate: {
                       File: {
                         CertificateChain: 'path/to/certChain',

@@ -1,11 +1,10 @@
-import { ICertificate } from '@aws-cdk/aws-certificatemanager';
+import * as acm from '@aws-cdk/aws-certificatemanager';
 import { CfnVirtualGateway, CfnVirtualNode } from './appmesh.generated';
 
 /**
  * Enum of supported TLS modes
  */
 export enum TlsMode {
-
   /**
    * Only accept encrypted traffic
    */
@@ -26,7 +25,6 @@ export enum TlsMode {
  * Redundant API shapes are represented here.
  */
 export interface TlsCertificateConfig {
-
   /**
    * The CFN shape for a virtual gateway listener TLS certificate
    */
@@ -42,7 +40,6 @@ export interface TlsCertificateConfig {
  * Represents a TLS certificate
  */
 export abstract class TlsCertificate {
-
   /**
    * Returns an File TLS Certificate
    */
@@ -75,7 +72,6 @@ export abstract class TlsCertificate {
  * Represents a ACM provided TLS certificate
  */
 export class ACMTlsCertificate extends TlsCertificate {
-
   /**
    * The TLS mode.
    *
@@ -86,7 +82,7 @@ export class ACMTlsCertificate extends TlsCertificate {
   /**
    * The ARN of the ACM certificate
    */
-  readonly acmCertificate: ICertificate;
+  readonly acmCertificate: acm.ICertificate;
 
   constructor(props: ACMCertificateOptions) {
     super();
@@ -114,7 +110,6 @@ export class ACMTlsCertificate extends TlsCertificate {
  * Represents a file provided TLS certificate
  */
 export class FileTlsCertificate extends TlsCertificate {
-
   /**
    * The TLS mode.
    *
@@ -161,7 +156,6 @@ export class FileTlsCertificate extends TlsCertificate {
  * ACM Certificate Properties
  */
 export interface ACMCertificateOptions {
-
   /**
    * The TLS mode.
    *
@@ -172,14 +166,13 @@ export interface ACMCertificateOptions {
   /**
    * The ACM certificate
    */
-  readonly acmCertificate: ICertificate;
+  readonly acmCertificate: acm.ICertificate;
 }
 
 /**
  * File Certificate Properties
  */
 export interface FileCertificateOptions {
-
   /**
    * The TLS mode.
    *

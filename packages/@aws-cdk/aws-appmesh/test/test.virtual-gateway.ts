@@ -190,7 +190,7 @@ export = {
                 Protocol: appmesh.Protocol.HTTP,
               },
               TLS: {
-                Mode: 'STRICT',
+                Mode: TlsMode.STRICT,
                 Certificate: {
                   ACM: {
                     CertificateArn: {
@@ -238,7 +238,7 @@ export = {
                 Protocol: appmesh.Protocol.GRPC,
               },
               TLS: {
-                Mode: 'STRICT',
+                Mode: TlsMode.STRICT,
                 Certificate: {
                   File: {
                     CertificateChain: 'path/to/certChain',
@@ -285,7 +285,7 @@ export = {
                 Protocol: appmesh.Protocol.GRPC,
               },
               TLS: {
-                Mode: 'PERMISSIVE',
+                Mode: TlsMode.PERMISSIVE,
                 Certificate: {
                   File: {
                     CertificateChain: 'path/to/certChain',

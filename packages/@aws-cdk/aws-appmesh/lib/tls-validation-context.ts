@@ -1,5 +1,5 @@
 import * as acmpca from '@aws-cdk/aws-acmpca';
-import { CfnVirtualGateway, CfnVirtualNode } from './appmesh.generated';
+import { CfnVirtualNode } from './appmesh.generated';
 
 // keep this import separate from other imports to reduce chance for merge conflicts with v2-main
 // eslint-disable-next-line no-duplicate-imports, import/order
@@ -20,28 +20,9 @@ export interface TlsValidationContext {
  */
 export interface TlsValidationTrustConfig {
   /**
-   * VirtualNode CFN configuration for client policy's TLS Validation
+   * CFN configuration for client policy's TLS Validation
    */
-  readonly virtualNodeClientTlsValidationContextTrust: CfnVirtualNode.TlsValidationContextTrustProperty;
-
-  /**
-   * VirtualNode CFN configuration for listener's TLS Validation
-   *
-   * @default - no TLS Validation
-   */
-  readonly virtualNodeListenerTlsValidationContextTrust?: CfnVirtualNode.ListenerTlsValidationContextTrustProperty
-
-  /**
-   * VirtualGateway CFN configuration for client policy's TLS Validation
-   */
-  readonly virtualGatewayClientTlsValidationContextTrust: CfnVirtualGateway.VirtualGatewayTlsValidationContextTrustProperty;
-
-  /**
-   * VirtualGateway CFN configuration for listener's TLS Validation
-   *
-   * @default - no TLS Validation
-   */
-  readonly virtualGatewayListenerTlsValidationContextTrust?: CfnVirtualGateway.VirtualGatewayListenerTlsValidationContextTrustProperty;
+  readonly trust: CfnVirtualNode.TlsValidationContextTrustProperty;
 }
 
 /**
@@ -105,13 +86,7 @@ class AcmTlsValidationContextTrustImpl extends TlsValidationContextTrust {
       throw new Error('you must provide at least one Certificate Authority when creating an ACM Trust ClientPolicy');
     } else {
       return {
-        virtualNodeClientTlsValidationContextTrust: {
-          acm: {
-            certificateAuthorityArns: this.certificateAuthorities.map(certificateArn =>
-              certificateArn.certificateAuthorityArn),
-          },
-        },
-        virtualGatewayClientTlsValidationContextTrust: {
+        trust: {
           acm: {
             certificateAuthorityArns: this.certificateAuthorities.map(certificateArn =>
               certificateArn.certificateAuthorityArn),
@@ -135,22 +110,7 @@ class FileTlsValidationContextTrustImpl extends TlsValidationContextTrust {
 
   public bind(_scope: Construct): TlsValidationTrustConfig {
     return {
-      virtualNodeClientTlsValidationContextTrust: {
-        file: {
-          certificateChain: this.certificateChain,
-        },
-      },
-      virtualNodeListenerTlsValidationContextTrust: {
-        file: {
-          certificateChain: this.certificateChain,
-        },
-      },
-      virtualGatewayClientTlsValidationContextTrust: {
-        file: {
-          certificateChain: this.certificateChain,
-        },
-      },
-      virtualGatewayListenerTlsValidationContextTrust: {
+      trust: {
         file: {
           certificateChain: this.certificateChain,
         },

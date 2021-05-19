@@ -192,7 +192,7 @@ export class VirtualNode extends VirtualNodeBase {
                   ports: backendDefaults.tlsClientPolicy.ports,
                   enforce: backendDefaults.tlsClientPolicy.enforce,
                   validation: {
-                    trust: backendDefaults.tlsClientPolicy.tlsValidationContext.trust.bind(this).virtualNodeClientTlsValidationContextTrust,
+                    trust: backendDefaults.tlsClientPolicy.tlsValidationContext.trust.bind(this).trust,
                   },
                 },
               }

@@ -188,7 +188,7 @@ export class VirtualGateway extends VirtualGatewayBase {
                   ports: backendDefaults.tlsClientPolicy.ports,
                   enforce: backendDefaults.tlsClientPolicy.enforce,
                   validation: {
-                    trust: backendDefaults.tlsClientPolicy.tlsValidationContext.trust.bind(this).virtualGatewayClientTlsValidationContextTrust,
+                    trust: backendDefaults.tlsClientPolicy.tlsValidationContext.trust.bind(this).trust,
                   },
                 },
               }

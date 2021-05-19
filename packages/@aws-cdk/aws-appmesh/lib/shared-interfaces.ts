@@ -269,7 +269,7 @@ class VirtualServiceBackend extends Backend {
                 ports: this.tlsClientPolicy.ports,
                 enforce: this.tlsClientPolicy.enforce,
                 validation: {
-                  trust: this.tlsClientPolicy.tlsValidationContext.trust.bind(_scope).virtualNodeClientTlsValidationContextTrust,
+                  trust: this.tlsClientPolicy.tlsValidationContext.trust.bind(_scope).trust,
                 },
               },
             }
